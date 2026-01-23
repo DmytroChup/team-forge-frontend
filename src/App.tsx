@@ -1,10 +1,10 @@
 import './App.css'
+import {RegisterForm} from "./components/RegisterForm.tsx";
 
 function App() {
   return (
     <div>
-        <h1>TeamForge</h1>
-        <p>Frontend is running!</p>
+        <RegisterForm />
     </div>
   )
 }
