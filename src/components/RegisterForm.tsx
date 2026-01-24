@@ -11,6 +11,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconBrandSteam, IconBrandDiscord } from '@tabler/icons-react';
+import axios from 'axios';
 
 interface FormValues {
     username: string;
@@ -41,9 +42,18 @@ export function RegisterForm() {
         },
     });
 
-    const handleSubmit = (values: FormValues) => {
-        console.log('Form is valid, sending:', values);
-        alert(JSON.stringify(values, null, 2));
+    const handleSubmit = async (values: FormValues) => {
+        try {
+            const response = await axios.post("http://localhost:8080/api/players", values);
+
+            console.log("Success!", response.data);
+            alert(`Player ${response.data.username} created! ID: ` + response.data.id);
+
+            form.reset();
+        } catch (error) {
+            console.error("Error: ", error);
+            alert("Error!")
+        }
     };
 
     return (
