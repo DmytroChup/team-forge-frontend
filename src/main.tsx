@@ -4,11 +4,14 @@ import { MantineProvider } from '@mantine/core';
 import App from './App.tsx'
 
 import '@mantine/core/styles.css';
+import {BrowserRouter} from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <MantineProvider defaultColorScheme="dark">
-            <App />
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
         </MantineProvider>
     </React.StrictMode>,
 )

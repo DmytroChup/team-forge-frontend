@@ -12,6 +12,11 @@ import {
 import { useForm } from '@mantine/form';
 import { IconBrandSteam, IconBrandDiscord } from '@tabler/icons-react';
 import axios from 'axios';
+import type { Player } from "../types.ts";
+
+interface RegisterFormProps {
+    onSuccess: (player: Player) => void;
+}
 
 interface FormValues {
     username: string;
@@ -22,7 +27,7 @@ interface FormValues {
     positions: string[];
 }
 
-export function RegisterForm() {
+export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
     const form = useForm<FormValues>({
         initialValues: {
             username: '',
@@ -44,15 +49,22 @@ export function RegisterForm() {
 
     const handleSubmit = async (values: FormValues) => {
         try {
-            const response = await axios.post("http://localhost:8080/api/players", values);
+            const response = await axios.post<Player>("http://localhost:8080/api/players", values);
 
-            console.log("Success!", response.data);
-            alert(`Player ${response.data.username} created! ID: ` + response.data.id);
-
+            console.log("Success:", response.data);
+            onSuccess(response.data);
             form.reset();
+
         } catch (error) {
-            console.error("Error: ", error);
-            alert("Error!")
+            if(axios.isAxiosError(error) && error.response) {
+                const data = error.response.data as { message: string }
+                const errorMessage = data.message || 'Something went wrong';
+
+                alert(`Error: ${errorMessage}`);
+            } else {
+              console.error("Unknown error:", error);
+              alert('Network error or server is down');
+            }
         }
     };
 
