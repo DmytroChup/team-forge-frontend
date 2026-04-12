@@ -42,7 +42,7 @@ export interface DotaProfileResponse {
     winRate?: number;
     totalMatches?: number;
     lookingForTeam: boolean;
-    steamId: string;
+    steamId?: string;
     aboutMe?: string;
 }
 
