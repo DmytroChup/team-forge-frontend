@@ -5,7 +5,12 @@
 
 // --- Enums ---
 
-export const RANKS = ["HERALD", "GUARDIAN", "CRUSADER", "ARCHON", "LEGEND", "ANCIENT", "DIVINE", "IMMORTAL"] as const;
+export const RANKS = [
+    "UNRANKED",
+    "HERALD", "GUARDIAN", "CRUSADER", "ARCHON",
+    "LEGEND", "ANCIENT", "DIVINE", "IMMORTAL"
+] as const;
+
 export const POSITIONS = ["CARRY", "MID", "OFFLANE", "SOFT_SUPPORT", "HARD_SUPPORT"] as const;
 
 export type Rank = typeof RANKS[number];
@@ -25,19 +30,17 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
-    token: string;
+    accessToken: string;
 }
 
 // --- Dota Profile Models ---
 
 export interface DotaProfileResponse {
     profileId: number;
-    userId: number;
     nickname: string;
     avatarUrl?: string;
-    mmr?: number;
-    rank?: Rank;
-    stars?: number;
+    estimatedMmr: number;
+    rankTier: number;
     positions?: Position[];
     winRate?: number;
     totalMatches?: number;
@@ -47,13 +50,21 @@ export interface DotaProfileResponse {
 }
 
 export interface DotaProfileUpdateRequest {
-    mmr?: number;
     positions?: Position[];
     lookingForTeam?: boolean;
     aboutMe?: string;
 }
 
 export interface DotaProfileSearchRequest {
-    ranks?: Rank[];
-    positions?: Position[];
+    rankTiers: number[];
+    positions: Position[];
+    includeUnranked: boolean;
+}
+
+// --- User Models ---
+
+export interface UserResponse {
+    id: number;
+    nickname: string;
+    email: string;
 }
