@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
     Box,
     TextInput,
@@ -18,7 +18,7 @@ import { AxiosError } from "axios";
 import { IconAlertCircle } from "@tabler/icons-react";
 import classes from "./RegisterPage.module.css";
 
-const BrandGeometry: React.FC = () => (
+const BrandGeometry = () => (
     <svg
         viewBox="0 0 420 600"
         fill="none"
@@ -47,7 +47,7 @@ interface RegisterFormValues extends RegisterRequest {
     confirmPassword?: string;
 }
 
-export const RegisterPage: React.FC = () => {
+export const RegisterPage = () => {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);

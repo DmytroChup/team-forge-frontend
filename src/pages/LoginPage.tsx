@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
     Box,
     TextInput,
@@ -16,8 +15,9 @@ import { authService } from "../services/authService";
 import { AxiosError } from "axios";
 import { IconAlertCircle } from "@tabler/icons-react";
 import classes from "./LoginPage.module.css";
+import { useState } from "react";
 
-const BrandGeometry: React.FC = () => (
+const BrandGeometry= () => (
     <svg
         viewBox="0 0 420 600"
         fill="none"
@@ -51,7 +51,7 @@ const BrandGeometry: React.FC = () => (
     </svg>
 );
 
-export const LoginPage: React.FC = () => {
+export const LoginPage = () => {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);

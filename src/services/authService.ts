@@ -1,7 +1,8 @@
 import apiClient from '../api/api';
-import type {AuthResponse, LoginRequest, RegisterRequest} from '../api/models';
+import type { AuthResponse, LoginRequest, RegisterRequest, UserResponse} from '../api/models';
 
-const TOKEN_KEY = 'authToken';
+const TOKEN_KEY = 'accessToken';
+const CURRENT_USER_KEY = 'currentUser';
 
 /**
  * Registers a new user, and upon success, stores the token.
@@ -10,8 +11,9 @@ const TOKEN_KEY = 'authToken';
  */
 export const registerUser = async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/api/auth/register', data);
-    if (response.data.token) {
-        setToken(response.data.token);
+    if (response.data.accessToken) {
+        setAccessToken(response.data.accessToken);
+        await fetchAndCacheCurrentUser();
     }
     return response.data;
 };
@@ -23,24 +25,53 @@ export const registerUser = async (data: RegisterRequest): Promise<AuthResponse>
  */
 export const loginUser = async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/api/auth/login', data);
-    if (response.data.token) {
-        setToken(response.data.token);
+    if (response.data.accessToken) {
+        setAccessToken(response.data.accessToken);
+        await fetchAndCacheCurrentUser();
     }
     return response.data;
 };
 
 /**
- * Logs the user out by removing the token.
+ * Requests a new access token from the backend using the HttpOnly refresh token cookie.
+ * Updates the access token in localStorage upon success.
+ * @returns A promise that resolves to the new access token string.
  */
-export const logoutUser = (): void => {
+export const refreshToken = async (): Promise<string> => {
+    const response = await apiClient.post<AuthResponse>('/api/auth/refresh-token');
+    const newAuthToken = response.data.accessToken;
+    setAccessToken(newAuthToken);
+    return newAuthToken;
+};
+
+/**
+ * Logs the user out by making a request to the backend to revoke the session,
+ * and then synchronously clears the local authentication data.
+ */
+export const logoutUser = async (): Promise<void> => {
+    try {
+        await apiClient.post('/api/auth/logout');
+    } catch (error) {
+        console.error("Logout request failed, but clearing local session anyway.", error);
+    } finally {
+        clearLocalData();
+    }
+};
+
+/**
+ * Synchronously clears the authentication token and cached user data from localStorage.
+ * Typically used during logout or when a session completely expires.
+ */
+export const clearLocalData = (): void => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(CURRENT_USER_KEY);
 };
 
 /**
  * Stores the JWT token in localStorage.
  * @param token - The JWT token.
  */
-export const setToken = (token: string): void => {
+export const setAccessToken = (token: string): void => {
     localStorage.setItem(TOKEN_KEY, token);
 };
 
@@ -48,7 +79,7 @@ export const setToken = (token: string): void => {
  * Retrieves the JWT token from localStorage.
  * @returns The token or null if it doesn't exist.
  */
-export const getToken = (): string | null => {
+export const getAccessToken = (): string | null => {
     return localStorage.getItem(TOKEN_KEY);
 };
 
@@ -59,14 +90,45 @@ export const getToken = (): string | null => {
  * @returns True if a token exists, false otherwise.
  */
 export const isAuthenticated = (): boolean => {
-    const token = getToken();
-    return !!token;
+    return !!getAccessToken();
+};
+
+/**
+ * Calls GET /api/users/me and stores the result in localStorage.
+ * Called once after login/register — after that use getCurrentUser() from cache.
+ */
+export const fetchAndCacheCurrentUser = async (): Promise<UserResponse | null> => {
+    try {
+        const response = await apiClient.get<UserResponse>('/api/users/me');
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(response.data));
+        return response.data;
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Returns the cached user from localStorage — no network request.
+ * Returns null if not logged in or cache is empty.
+ */
+export const getCurrentUser = (): UserResponse | null => {
+    const raw = localStorage.getItem(CURRENT_USER_KEY);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw) as UserResponse;
+    } catch {
+        return null;
+    }
 };
 
 export const authService = {
     registerUser,
     loginUser,
+    refreshToken,
     logoutUser,
-    getToken,
+    clearLocalData,
+    getAccessToken,
     isAuthenticated,
+    getCurrentUser,
+    fetchAndCacheCurrentUser,
 };
