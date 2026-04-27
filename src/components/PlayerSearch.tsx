@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Container, Title, Grid, Card, Text, MultiSelect, Button, Loader, Center,
-    Badge, Avatar, Box, Stack, Flex, Pagination, Group, Checkbox, Select, ActionIcon
+    Badge, Avatar, Box, Stack, Flex, Pagination, Group, Checkbox, Select, ActionIcon, Tooltip, UnstyledButton
 } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconSearch, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
 import { profileService } from '../services/profileService';
@@ -10,7 +10,7 @@ import { RANKS, POSITIONS } from '../api/models';
 import { isAxiosError } from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
 import { authService } from "../services/authService.ts";
-import { parseRankTier, ranksToSearchParams, RANK_COLORS, ROMAN } from '../utils/rankParser';
+import { parseRankTier, ranksToSearchParams, RANK_COLORS, ROMAN, RANK_IMAGES } from '../utils/rankParser';
 
 export function PlayerSearch() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -144,6 +144,12 @@ export function PlayerSearch() {
         setSearchParams(new URLSearchParams());
     };
 
+    const toggleRank = (rank: Rank) => {
+        setPendingRanks(prev =>
+            prev.includes(rank) ? prev.filter(r => r !== rank) : [...prev, rank]
+        );
+    };
+
     const renderFilterPill = (
         label: string,
         value: number | null,
@@ -226,18 +232,81 @@ export function PlayerSearch() {
 
                 <Box mb="xl" style={{ background: 'rgba(4, 9, 15, 0.4)', backdropFilter: 'blur(10px)', border: '1px solid rgba(34,211,238,.12)', borderRadius: 16, padding: 32, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
                     <Grid gutter="xl">
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                            <MultiSelect
-                                label={<Text style={{ fontFamily: "'Oxanium', sans-serif", fontSize: 12, color: "#94a3b8", marginBottom: 6, fontWeight: 700 }}>Skill Tier</Text>}
-                                placeholder="Select rank tiers"
-                                data={[...RANKS]}
-                                value={pendingRanks}
-                                onChange={(values) => setPendingRanks(values as Rank[])}
-                                clearable
-                                styles={{ input: { background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.1)", fontFamily: "'DM Sans', sans-serif", color: "#f1f5f9" }, pill: { fontFamily: "'Oxanium', sans-serif", fontWeight: 600, fontSize: 11, background: 'rgba(34,211,238,.08)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.2)' } }}
-                            />
+                        <Grid.Col span={12}>
+                            <Text
+                                style={{
+                                    fontFamily: "'Oxanium', sans-serif",
+                                    fontSize: 13,
+                                    color: "#94a3b8",
+                                    marginBottom: 12,
+                                    fontWeight: 700,
+                                    letterSpacing: 0.5,
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                Skill Tier
+                            </Text>
+                            {/* Темная "полка" для рангов */}
+                            <Box style={{
+                                background: 'rgba(0, 0, 0, 0.25)', // Глубокий темный фон
+                                border: '1px solid rgba(255,255,255,0.03)',
+                                borderRadius: 16,
+                                padding: '20px 24px', // Просторные отступы
+                                boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.1)'
+                            }}>
+                                {/* Распределяем по ВСЕЙ ширине */}
+                                <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
+                                    {RANKS.map((rank) => {
+                                        const isSelected = pendingRanks.includes(rank);
+                                        return (
+                                            <Tooltip
+                                                key={rank}
+                                                label={rank.replace('_', ' ')}
+                                                position="top"
+                                                withArrow
+                                                offset={10}
+                                            >
+                                                <UnstyledButton
+                                                    onClick={() => toggleRank(rank)}
+                                                    style={{
+                                                        width: 76,  // 🔥 Сделали крупными!
+                                                        height: 76,
+                                                        borderRadius: 16,
+                                                        // Вместо грубой квадратной рамки - мягкое неоновое свечение и фон
+                                                        border: isSelected ? '1px solid rgba(34,211,238,0.4)' : '1px solid transparent',
+                                                        background: isSelected ? 'radial-gradient(circle, rgba(34,211,238,0.15) 0%, rgba(0,0,0,0) 80%)' : 'transparent',
+                                                        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        alignItems: 'center',
+
+                                                        // Главная магия фокуса:
+                                                        // Не выбран: черно-белый, 35% видимости.
+                                                        // Выбран: полная яркость + drop-shadow (тень по контуру самой медали, а не кнопки!)
+                                                        filter: isSelected ? 'drop-shadow(0 0 12px rgba(34,211,238,0.6))' : 'grayscale(100%) opacity(35%)',
+                                                        // Активная медаль слегка "всплывает" и увеличивается
+                                                        transform: isSelected ? 'scale(1.1) translateY(-4px)' : 'scale(1)',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={RANK_IMAGES[rank]}
+                                                        alt={rank}
+                                                        style={{
+                                                            width: 60, // 🔥 Сами иконки теперь массивные
+                                                            height: 60,
+                                                            objectFit: 'contain'
+                                                        }}
+                                                    />
+                                                </UnstyledButton>
+                                            </Tooltip>
+                                        );
+                                    })}
+                                </Flex>
+                            </Box>
                         </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 6 }}>
+
+                        <Grid.Col span={12}>
                             <MultiSelect
                                 label={<Text style={{ fontFamily: "'Oxanium', sans-serif", fontSize: 12, color: "#94a3b8", marginBottom: 6, fontWeight: 700 }}>Role Priority</Text>}
                                 placeholder="Select standard positions"

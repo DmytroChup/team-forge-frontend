@@ -1,3 +1,5 @@
+import type { Rank } from "../api/models.ts";
+
 export const RANK_COLORS: Record<string, string> = {
     UNRANKED: "#888888",
     HERALD:   "#8b7355",
@@ -11,6 +13,18 @@ export const RANK_COLORS: Record<string, string> = {
 };
 
 export const ROMAN = ["I", "II", "III", "IV", "V"];
+
+export const RANK_IMAGES: Record<Rank, string> = {
+    UNRANKED: "/assets/ranks/medal_0.png",
+    HERALD: "/assets/ranks/medal_1.png",
+    GUARDIAN: "/assets/ranks/medal_2.png",
+    CRUSADER: "/assets/ranks/medal_3.png",
+    ARCHON: "/assets/ranks/medal_4.png",
+    LEGEND: "/assets/ranks/medal_5.png",
+    ANCIENT: "/assets/ranks/medal_6.png",
+    DIVINE: "/assets/ranks/medal_7.png",
+    IMMORTAL: "/assets/ranks/medal_8.png",
+};
 
 const RANK_TO_TIERS: Record<string, number[]> = {
     UNRANKED: [],
