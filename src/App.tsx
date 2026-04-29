@@ -16,9 +16,10 @@ function App() {
 
             <Route element={<MainLayout />}>
                 <Route path="/profile/:nickname" element={<DotaProfilePage />} />
+                <Route path="/dota/search" element={<PlayerSearch />} />
 
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/search" element={<PlayerSearch />} />
+
                 </Route>
             </Route>
         </Routes>
