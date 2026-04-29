@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Container, Title, Grid, Card, Text, MultiSelect, Button, Loader, Center,
-    Badge, Avatar, Box, Stack, Flex, Pagination, Group, Checkbox, Select, ActionIcon, Tooltip, UnstyledButton
+    Badge, Avatar, Box, Stack, Flex, Pagination, Group, Checkbox, Select, ActionIcon,
+    Tooltip, UnstyledButton, TextInput
 } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconSearch, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
 import { profileService } from '../services/profileService';
@@ -25,12 +26,14 @@ export function PlayerSearch() {
 
     const ranksString = searchParams.get('ranks');
     const selectedRanks = useMemo(() => ranksString ? ranksString.split(',').filter(Boolean) as Rank[] : [], [ranksString]);
+    const nameQuery = searchParams.get('name') || '';
 
     const posString = searchParams.get('pos');
     const selectedPositions = useMemo(() => posString ? posString.split(',').filter(Boolean) as Position[] : [], [posString]);
 
     const [pendingRanks, setPendingRanks] = useState<Rank[]>(selectedRanks);
     const [pendingPositions, setPendingPositions] = useState<Position[]>(selectedPositions);
+    const [pendingName, setPendingName] = useState(nameQuery);
 
     const [players, setPlayers] = useState<DotaProfileResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,6 +51,7 @@ export function PlayerSearch() {
                 ...updates,
                 ranks: pendingRanks.length > 0 ? pendingRanks.join(',') : null,
                 pos: pendingPositions.length > 0 ? pendingPositions.join(',') : null,
+                name: pendingName.trim() === '' ? null : pendingName.trim(),
             };
 
             Object.entries(finalUpdates).forEach(([key, value]) => {
@@ -73,7 +77,7 @@ export function PlayerSearch() {
 
             return newParams;
         });
-    }, [setSearchParams, pendingRanks, pendingPositions]);
+    }, [setSearchParams, pendingRanks, pendingPositions, pendingName]);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -88,9 +92,10 @@ export function PlayerSearch() {
 
             let data;
 
-            if (hasFilters) {
+            if (hasFilters || nameQuery) {
                 const { rankTiers, includeUnranked } = ranksToSearchParams(selectedRanks);
                 const searchCriteria = {
+                    nickname: nameQuery || undefined,
                     rankTiers,
                     positions: selectedPositions,
                     includeUnranked,
@@ -121,14 +126,15 @@ export function PlayerSearch() {
             setLoading(false);
         }
     }, [activePage, sortBy, sortDirection,
-        selectedRanks, selectedPositions,
+        selectedRanks, selectedPositions, nameQuery,
         minWinRate, minMatches, requireSteam,
         lookingForTeam, currentNickname]);
 
     useEffect(() => {
         setPendingRanks(selectedRanks);
         setPendingPositions(selectedPositions);
-    }, [selectedRanks, selectedPositions]);
+        setPendingName(nameQuery);
+    }, [selectedRanks, selectedPositions, nameQuery]);
 
     useEffect(() => {
         void fetchData();
@@ -142,6 +148,7 @@ export function PlayerSearch() {
         setPendingRanks([]);
         setPendingPositions([]);
         setSearchParams(new URLSearchParams());
+        setPendingName('')
     };
 
     const toggleRank = (rank: Rank) => {
@@ -233,6 +240,33 @@ export function PlayerSearch() {
                 <Box mb="xl" style={{ background: 'rgba(4, 9, 15, 0.4)', backdropFilter: 'blur(10px)', border: '1px solid rgba(34,211,238,.12)', borderRadius: 16, padding: 32, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
                     <Grid gutter="xl">
                         <Grid.Col span={12}>
+                            <TextInput
+                                placeholder="Search by nickname..."
+                                value={pendingName}
+                                onChange={(e) => setPendingName(e.currentTarget.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSearchClick();
+                                }}
+                                leftSection={<IconSearch size={18} color="rgba(34,211,238,0.5)" />}
+                                size="md"
+                                styles={{
+                                    input: {
+                                        background: "rgba(0,0,0,0.25)",
+                                        border: "1px solid rgba(34,211,238,0.2)",
+                                        fontFamily: "'Oxanium', sans-serif",
+                                        color: "#f1f5f9",
+                                        fontSize: 16,
+                                        borderRadius: 12,
+                                        '&:focus': {
+                                            borderColor: "#22d3ee",
+                                            boxShadow: "0 0 10px rgba(34,211,238,0.15)"
+                                        }
+                                    }
+                                }}
+                            />
+                        </Grid.Col>
+
+                        <Grid.Col span={12}>
                             <Text
                                 style={{
                                     fontFamily: "'Oxanium', sans-serif",
@@ -246,15 +280,13 @@ export function PlayerSearch() {
                             >
                                 Skill Tier
                             </Text>
-                            {/* Темная "полка" для рангов */}
                             <Box style={{
-                                background: 'rgba(0, 0, 0, 0.25)', // Глубокий темный фон
+                                background: 'rgba(0, 0, 0, 0.25)',
                                 border: '1px solid rgba(255,255,255,0.03)',
                                 borderRadius: 16,
-                                padding: '20px 24px', // Просторные отступы
+                                padding: '20px 24px',
                                 boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.1)'
                             }}>
-                                {/* Распределяем по ВСЕЙ ширине */}
                                 <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
                                     {RANKS.map((rank) => {
                                         const isSelected = pendingRanks.includes(rank);
@@ -269,22 +301,16 @@ export function PlayerSearch() {
                                                 <UnstyledButton
                                                     onClick={() => toggleRank(rank)}
                                                     style={{
-                                                        width: 76,  // 🔥 Сделали крупными!
+                                                        width: 76,
                                                         height: 76,
                                                         borderRadius: 16,
-                                                        // Вместо грубой квадратной рамки - мягкое неоновое свечение и фон
                                                         border: isSelected ? '1px solid rgba(34,211,238,0.4)' : '1px solid transparent',
                                                         background: isSelected ? 'radial-gradient(circle, rgba(34,211,238,0.15) 0%, rgba(0,0,0,0) 80%)' : 'transparent',
                                                         transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
                                                         display: 'flex',
                                                         justifyContent: 'center',
                                                         alignItems: 'center',
-
-                                                        // Главная магия фокуса:
-                                                        // Не выбран: черно-белый, 35% видимости.
-                                                        // Выбран: полная яркость + drop-shadow (тень по контуру самой медали, а не кнопки!)
                                                         filter: isSelected ? 'drop-shadow(0 0 12px rgba(34,211,238,0.6))' : 'grayscale(100%) opacity(35%)',
-                                                        // Активная медаль слегка "всплывает" и увеличивается
                                                         transform: isSelected ? 'scale(1.1) translateY(-4px)' : 'scale(1)',
                                                         cursor: 'pointer',
                                                     }}
@@ -293,7 +319,7 @@ export function PlayerSearch() {
                                                         src={RANK_IMAGES[rank]}
                                                         alt={rank}
                                                         style={{
-                                                            width: 60, // 🔥 Сами иконки теперь массивные
+                                                            width: 60,
                                                             height: 60,
                                                             objectFit: 'contain'
                                                         }}
